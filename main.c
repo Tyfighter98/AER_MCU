@@ -5,6 +5,14 @@
 #include <string.h>
 #include "pigpio.h"
 
+struct writer_args {
+    char * filename;
+    int *a;
+    int *b;
+    int *c;
+    int *d;
+    int *cursor;
+};
 
 void isr(int gpio, int level, uint32_t tick) {
      //initialize isr to execute another function
@@ -77,7 +85,9 @@ int init(char * filename) {
         return 1;
 }
 
-int csvWrite(char * filename, int a[], int b[], int c[], int d[], int *cursor){
+void *csvWriter(void *arguments){
+    struct writer_args *args = arguments;
+
     clock_t t;
     double dt;
     FILE *fp;
@@ -88,26 +98,26 @@ int csvWrite(char * filename, int a[], int b[], int c[], int d[], int *cursor){
     int SDCircuit[1000];    // Shut Down Circuit Array
     int Trigger[1000];      // 5V Trigger Array
 
-    fp = fopen(filename, "a+");
+    fp = fopen((args -> filename), "a+");
     t = clock();
     
     // Enter critial section
     // Copy data from buffers into local arrays
-    pointer = *cursor;
+    pointer = *(args -> cursor);
     for(int i = 0; i < pointer; i++)
     {
-        BSPD[i] = a[i];
-        IMD[i] = b[i];
-        SDCircuit[i] = c[i];
-        Trigger[i] = d[i];
+        BSPD[i] = (args -> a)[i];
+        IMD[i] = (args -> b)[i];
+        SDCircuit[i] = (args -> c)[i];
+        Trigger[i] = (args -> d)[i];
     }
 
     // reset arrays and pointer
-    memset(a, 0, sizeof(&a));
-    memset(b, 0, sizeof(&b));
-    memset(c, 0, sizeof(&c));
-    memset(d, 0, sizeof(&d));
-    *cursor = 0;
+    memset((args -> a), 0, sizeof(&(args -> a)));
+    memset((args -> b), 0, sizeof(&(args -> b)));
+    memset((args -> c), 0, sizeof(&(args -> c)));
+    memset((args -> d), 0, sizeof(&(args -> d)));
+    *(args -> cursor) = 0;
     // Exit critial section
 
     // Measure time lost where data was not able to be read
@@ -129,7 +139,8 @@ int csvWrite(char * filename, int a[], int b[], int c[], int d[], int *cursor){
     printf("The program took %f seconds to write buffers to file\n", dt);
     
     fclose(fp);
-    return 1;
+
+    return 0;
 }
 
 int readSerialCanbus(char *serialDevice, char *buff) {
@@ -143,19 +154,29 @@ int readSerialCanbus(char *serialDevice, char *buff) {
 }
 
 int main() {
+
+    pthread_t t_writer;
     
     int BSPD[1000];    // BSPD Array
     int IMD[1000];     // IMD Array
     int SDCircuit[1000]; // Shut Down Circuit Array
     int Trigger[1000]; // 5V Trigger Array
-    int pointer = 1000;
+    int pointer = 2;
     char filename[100] = "log.csv";
     char serialDevice[100] = "serialDevice";
     char bufCanBus[1000];
+
+    struct writer_args args;
+    args.filename = filename;
+    args.a = BSPD;
+    args.b = IMD;
+    args.c = SDCircuit;
+    args.d = Trigger;
+    args.cursor = &pointer;
     
     //init()
     init(filename);
-    csvWrite(filename, BSPD, IMD, SDCircuit, Trigger, &pointer);
+    pthread_create(&t_writer, NULL, &csvWriter, (void *)&args);
     
     // while(1)
     // {
