@@ -2,3 +2,4 @@
 pigpio-master/
 .vscode/
 *.csv
+*.txt

@@ -9,14 +9,24 @@
 // Compile with "gcc -Wall -pthread main.c -lpthread -lpigpio"
 
 sem_t buffMutex;
+sem_t serialMutex;
 
 struct writer_args {
-    char * filename;
+    char *csvFile;
+    char *txtFile;
     int *a;
     int *b;
     int *c;
     int *d;
-    int *cursor;
+    char *e;
+    int *ioCursor;
+    int *serialCursor;
+};
+
+struct serial_args {
+    char *serialDevice;
+    char *buff;
+    int *serialCursor;
 };
 
 // TODO Update arguments for gpioSetISRFuncEx
@@ -46,7 +56,8 @@ int init(char * filename) {
     fclose(fp);
 
     // Init semaphore to be shared between theads and start with a value of 1
-    sem_init(&buffMutex, 0, 1); 
+    sem_init(&buffMutex, 0, 1);
+    sem_init(&serialMutex, 0, 1); 
 
     //initialize gpio pin to input on RPi Zero W using gpiosetmode() function
     //setup isr for both MOM inputs so that isr function runs whenever interrupt occurs from button being pressed using gpioSetISRFunc()
@@ -100,27 +111,31 @@ void *csvWriter(void *arguments){
 
     clock_t t;
     double dt;
-    FILE *fp;
+    FILE *csv_fp;
+    FILE *txt_fp;
 
-    int pointer;
+    int ioPointer;
+    int serialPointer;
     int BSPD[1000];         // BSPD Array
     int IMD[1000];          // IMD Array
     int SDCircuit[1000];    // Shut Down Circuit Array
     int Trigger[1000];      // 5V Trigger Array
+    char bufCanBus[1000];   // Canbus Array
 
     // Wait 10ms before starting main loop
     gpioSleep(PI_TIME_RELATIVE, 0, 10000);
 
     while(1) {
-        fp = fopen((args -> filename), "a+");
+        csv_fp = fopen((args -> csvFile), "a+");
+        txt_fp = fopen((args -> txtFile), "a+");
         t = clock();
         
-        // Enter critial section
-        // sem_wait(&buffMutex);
-        printf("Entering csvWriter critical section\n");
+        // Enter buff critial section
+        sem_wait(&buffMutex);
+        // printf("Entering buff csvWriter critical section\n");
         // Copy data from buffers into local arrays
-        pointer = *(args -> cursor);
-        for(int i = 0; i < pointer; i++)
+        ioPointer = *(args -> ioCursor);
+        for(int i = 0; i < ioPointer; i++)
         {
             BSPD[i] = (args -> a)[i];
             IMD[i] = (args -> b)[i];
@@ -133,10 +148,27 @@ void *csvWriter(void *arguments){
         memset((args -> b), 0, sizeof(&(args -> b)));
         memset((args -> c), 0, sizeof(&(args -> c)));
         memset((args -> d), 0, sizeof(&(args -> d)));
-        *(args -> cursor) = 0;
-        // sem_post(&buffMutex);
-        printf("Exited csvWriter critical section\n");
-        // Exit critial section
+        *(args -> ioCursor) = 0;
+        sem_post(&buffMutex);
+        // printf("Exited buff csvWriter critical section\n");
+        // Exit buff critial section
+
+        // Enter serial critial section
+        sem_wait(&serialMutex);
+        // printf("Entering serial csvWriter critical section\n");
+        // Copy data from buffers into local arrays
+        serialPointer = *(args -> serialCursor);
+        for(int i = 0; i < serialPointer; i++)
+        {
+            bufCanBus[i] = (args -> e)[i];
+        }
+
+        // reset arrays and pointer
+        memset((args -> e), 0, sizeof(&(args -> e)));
+        *(args -> serialCursor) = 0;
+        sem_post(&serialMutex);
+        // printf("Exited serial csvWriter critical section\n");
+        // Exit serial critial section
 
         // Measure time lost where data was not able to be read
         t = clock() - t;
@@ -145,18 +177,22 @@ void *csvWriter(void *arguments){
 
         t = clock();
         // Write data in local array to file
-        for(int i = 0; i < pointer; i++)
+        for(int i = 0; i < ioPointer; i++)
         {
-            fprintf(fp, "\n%d,", BSPD[i]);      // BSPD
-            fprintf(fp, "%d,", IMD[i]);         // IMD
-            fprintf(fp, "%d,", SDCircuit[i]);   // Shut Down Circuit
-            fprintf(fp, "%d", Trigger[i]);      // 5V Trigger
+            fprintf(csv_fp, "\n%d,", BSPD[i]);      // BSPD
+            fprintf(csv_fp, "%d,", IMD[i]);         // IMD
+            fprintf(csv_fp, "%d,", SDCircuit[i]);   // Shut Down Circuit
+            fprintf(csv_fp, "%d", Trigger[i]);      // 5V Trigger
         }
         t = clock() - t;
         dt = ((double)t)/CLOCKS_PER_SEC;
         printf("The program took %f seconds to write buffers to file\n", dt);
+
+        // Write data in local array to file
+        fputs(bufCanBus, txt_fp);
         
-        fclose(fp);
+        fclose(csv_fp);
+        fclose(txt_fp);
         
         // Wait 10ms
         gpioSleep(PI_TIME_RELATIVE, 0, 10000);
@@ -165,54 +201,75 @@ void *csvWriter(void *arguments){
     return 0;
 }
 
-int readSerialCanbus(char *serialDevice, char *buff) {
-     //runs on thread separate from main signal read loop
-     //read serial data incoming from CAN bus controller and write to buffer using following functions: serOpen(), serClose(), and serRead()
-    int handle = serOpen(serialDevice, 9600, 0);
-    serRead(handle, buff, 4);
-    serClose(handle);
+void *readSerialCanbus(void *arguments) {
+    struct serial_args *args = arguments;
+    //runs on thread separate from main signal read loop
+    //read serial data incoming from CAN bus controller and write to buffer using following functions: serOpen(), serClose(), and serRead()
+    int handle = serOpen((args -> serialDevice), 9600, 0);
+    while (1) {
+        sem_wait(&serialMutex);
+        *(args -> serialCursor) = serRead(handle, (args -> buff), 96);
+        serClose(handle);
+        sem_post(&serialMutex);
+
+        // Wait 0.25ms (loses ~2.4bits)
+        // Allows for writer to grab semaphore
+        gpioSleep(PI_TIME_RELATIVE, 0, 250);
+    }
     
-    return 1;
+    
+    return 0;
 }
 
 int main() {
 
     pthread_t t_writer;
+    pthread_t t_serial;
     
-    int BSPD[1000];    // BSPD Array
-    int IMD[1000];     // IMD Array
-    int SDCircuit[1000]; // Shut Down Circuit Array
-    int Trigger[1000]; // 5V Trigger Array
-    int pointer = 0;
-    char filename[100] = "log.csv";
-    char serialDevice[100] = "serialDevice";
+    int BSPD[1000];         // BSPD Array
+    int IMD[1000];          // IMD Array
+    int SDCircuit[1000];    // Shut Down Circuit Array
+    int Trigger[1000];      // 5V Trigger Array
+    int ioPointer = 0;
+    int serialPointer = 0;
+    char csvFile[100] = "log.csv";
+    char txtFile[100] = "log.txt";
+    char serialDevice[100] = "/dev/ttyAMA0"; // PL011 Serial Port
     char bufCanBus[1000];
 
-    struct writer_args args;
-    args.filename = filename;
-    args.a = BSPD;
-    args.b = IMD;
-    args.c = SDCircuit;
-    args.d = Trigger;
-    args.cursor = &pointer;
+    struct writer_args w_args;
+    w_args.csvFile = csvFile;
+    w_args.txtFile = txtFile;
+    w_args.a = BSPD;
+    w_args.b = IMD;
+    w_args.c = SDCircuit;
+    w_args.d = Trigger;
+    w_args.e = bufCanBus;
+    w_args.ioCursor = &ioPointer;
+    w_args.serialCursor = &serialPointer;
+
+    struct serial_args s_args;
+    s_args.serialDevice = serialDevice;
+    s_args.buff = bufCanBus;
+    s_args.serialCursor = &serialPointer;
     
-    //init()
-    init(filename);
-    pthread_create(&t_writer, NULL, &csvWriter, (void *)&args);
+    init(csvFile);
+    pthread_create(&t_writer, NULL, &csvWriter, (void *)&w_args);
+    // pthread_create(&t_serial, NULL, &readSerialCanbus, (void *)&s_args);
 
     while(1)
     {
         // Enter critical section
         // reading each signal inputs sequentially (BSPD, IMD, Shut Down Circuit, 5v Trigger)
         sem_wait(&buffMutex);
-        printf("Entering main critical section\n");
-        BSPD[pointer] = gpioRead(2);
-        IMD[pointer] = gpioRead(15);
-        SDCircuit[pointer] = gpioRead(18);
-        Trigger[pointer] = gpioRead(4);
-        pointer++;
+        // printf("Entering main critical section\n");
+        BSPD[ioPointer] = gpioRead(2);
+        IMD[ioPointer] = gpioRead(15);
+        SDCircuit[ioPointer] = gpioRead(18);
+        Trigger[ioPointer] = gpioRead(4);
+        ioPointer++;
         sem_post(&buffMutex);
-        printf("Exited main critical section\n");
+        // printf("Exited main critical section\n");
         // Exit critical section
         
         // Wait 0.5ms
