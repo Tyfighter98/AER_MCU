@@ -14,6 +14,7 @@ struct writer_args {
     int *cursor;
 };
 
+// TODO Update arguments for gpioSetISRFuncEx
 void isr(int gpio, int level, uint32_t tick) {
      //initialize isr to execute another function
      //read state of MOM button and write to data buffer
@@ -79,6 +80,7 @@ int init(char * filename) {
         gpioSetPullUpDown(10, PI_PUD_UP);
         gpioSetPullUpDown(25, PI_PUD_UP);
 
+        // TODO Update arguments and functinos for gpioSetISRFuncEx
         gpioSetISRFunc(14, RISING_EDGE, 1, isr);
         gpioSetISRFunc(3, RISING_EDGE, 1, isr);
 
