@@ -1,3 +1,4 @@
 *.out
 pigpio-master/
 .vscode/
+*.csv

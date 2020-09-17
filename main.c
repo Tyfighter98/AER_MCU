@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <pthread.h> 
+#include <string.h>
 #include "pigpio.h"
+
 
 void isr(int gpio, int level, uint32_t tick) {
      //initialize isr to execute another function
@@ -9,9 +12,27 @@ void isr(int gpio, int level, uint32_t tick) {
     //bufMOM = gpioRead(gpio);
 }
 
-int init() {
-     //initialize gpio pin to input on RPi Zero W using gpiosetmode() function
-     //setup isr for both MOM inputs so that isr function runs whenever interrupt occurs from button being pressed using gpioSetISRFunc()
+int init(char * filename) {
+    FILE *fp;
+    int fileExists = 1;
+    
+    // Check if the log file already exits
+    if(access(filename, F_OK) == -1) {
+        printf("File does not exist, creating a new file!\n");
+        fileExists = 0;
+    }
+
+    fp = fopen(filename, "a+");
+
+    // Add CSV header if a new file was created
+    if (!fileExists) {
+        fprintf(fp, "BSPD, IMD, Shut Down Circuit, 5V Trigger");
+    }
+
+    fclose(fp);
+
+    //initialize gpio pin to input on RPi Zero W using gpiosetmode() function
+    //setup isr for both MOM inputs so that isr function runs whenever interrupt occurs from button being pressed using gpioSetISRFunc()
     if (gpioInitialise() < 0)
         {
             printf("GPIO initialization failed\n");
@@ -56,22 +77,56 @@ int init() {
         return 1;
 }
 
-int csvWrite(char * filename, int a[], int b[], int c[], int d[]){
-     //runs on thread separate from main signal read loop
-     //write data stored in arrays to CSV file on USB using the following functions: fopen(), fclose(), and fprintf()
-    printf("\n Creating %s file", filename);
-    
+int csvWrite(char * filename, int a[], int b[], int c[], int d[], int *cursor){
+    clock_t t;
+    double dt;
     FILE *fp;
-    fp = fopen(filename, "w+");
+
+    int pointer;
+    int BSPD[1000];         // BSPD Array
+    int IMD[1000];          // IMD Array
+    int SDCircuit[1000];    // Shut Down Circuit Array
+    int Trigger[1000];      // 5V Trigger Array
+
+    fp = fopen(filename, "a+");
+    t = clock();
     
-    fprintf(fp, "BSPD, IMD, Shut Down Circuit, 5V Trigger");
-    for(int i = 0; i < 1000; i++)
+    // Enter critial section
+    // Copy data from buffers into local arrays
+    pointer = *cursor;
+    for(int i = 0; i < pointer; i++)
     {
-        fprintf(fp, "\n%d", a[i]);      // BSPD
-        fprintf(fp, " ,%d ", b[i]);     // IMD
-        fprintf(fp, " ,%d ", c[i]);     // Shut Down Circuit
-        fprintf(fp, " ,%d ", d[i]);     // 5V Trigger
+        BSPD[i] = a[i];
+        IMD[i] = b[i];
+        SDCircuit[i] = c[i];
+        Trigger[i] = d[i];
     }
+
+    // reset arrays and pointer
+    memset(a, 0, sizeof(&a));
+    memset(b, 0, sizeof(&b));
+    memset(c, 0, sizeof(&c));
+    memset(d, 0, sizeof(&d));
+    *cursor = 0;
+    // Exit critial section
+
+    // Measure time lost where data was not able to be read
+    t = clock() - t;
+    dt = ((double)t)/CLOCKS_PER_SEC;
+    printf("The program took %f seconds to copy the buffers\n", dt);
+
+    t = clock();
+    // Write data in local array to file
+    for(int i = 0; i < pointer; i++)
+    {
+        fprintf(fp, "\n%d,", BSPD[i]);      // BSPD
+        fprintf(fp, "%d,", IMD[i]);         // IMD
+        fprintf(fp, "%d,", SDCircuit[i]);   // Shut Down Circuit
+        fprintf(fp, "%d", Trigger[i]);      // 5V Trigger
+    }
+    t = clock() - t;
+    dt = ((double)t)/CLOCKS_PER_SEC;
+    printf("The program took %f seconds to write buffers to file\n", dt);
     
     fclose(fp);
     return 1;
@@ -89,44 +144,40 @@ int readSerialCanbus(char *serialDevice, char *buff) {
 
 int main() {
     
-    int BSPD[1000];     // BSPD Array
-    int IMD[1000];      // IMD Array
+    int BSPD[1000];    // BSPD Array
+    int IMD[1000];     // IMD Array
     int SDCircuit[1000]; // Shut Down Circuit Array
-    int Trigger[1000];  // 5V Trigger Array
-    char filename[100] = "filename.csv";
+    int Trigger[1000]; // 5V Trigger Array
+    int pointer = 1000;
+    char filename[100] = "log.csv";
     char serialDevice[100] = "serialDevice";
     char bufCanBus[1000];
     
     //init()
-    init();
+    init(filename);
+    csvWrite(filename, BSPD, IMD, SDCircuit, Trigger, &pointer);
     
-    while(1)
-    {
-        for (int i = 0; i < 1000; i++ )
-        {
-            // reading each signal inputs sequentially (BSPD, IMD, Shut Down Circuit, 5v Trigger)
-            BSPD[i] = gpioRead(2);
-            IMD[i] = gpioRead(15);
-            SDCircuit[i] = gpioRead(18);
-            Trigger[i] = gpioRead(4);
-            // delay between each iteration using pigpio gpioSleep() function
-            gpioSleep(1, 0, 1);
-        }//end loop
+    // while(1)
+    // {
+    //     // for (int i = 0; i < 1000; i++ )
+    //     // {
+    //     //     // reading each signal inputs sequentially (BSPD, IMD, Shut Down Circuit, 5v Trigger)
+    //     //     BSPD[i] = gpioRead(2);
+    //     //     IMD[i] = gpioRead(15);
+    //     //     SDCircuit[i] = gpioRead(18);
+    //     //     Trigger[i] = gpioRead(4);
+    //     //     // delay between each iteration using pigpio gpioSleep() function
+    //     //     gpioSleep(1, 0, 1);
+    //     // }//end loop
         
-        //csvWrite()
-        csvWrite(filename, BSPD, IMD, SDCircuit, Trigger);
-        //readSerialCanbus
-        readSerialCanbus(serialDevice, bufCanBus);
+    //     //csvWrite()
+    //     // csvWrite(filename, BSPD, IMD, SDCircuit, Trigger);
+    //     //readSerialCanbus
+    //     // readSerialCanbus(serialDevice, bufCanBus);
         
-        // resetting the arrays
-        for (int i = 0; i < 1000; i++) {
-            BSPD[i] = 0;
-            IMD[i] = 0;
-            SDCircuit[i] = 0;
-            Trigger[i] = 0;
-        }
-        
-        gpioSleep(1, 0, 1);
-    }
+    //     gpioSleep(PI_TIME_RELATIVE, 2, 0);
+    //     pointer++;
+    //     printf("%d\n", pointer);
+    // }
     return 0;
 }
