@@ -19,6 +19,8 @@ struct writer_args {
     int *c;
     int *d;
     char *e;
+    int *f;
+    int *g;
     int *ioCursor;
     int *serialCursor;
 };
@@ -27,19 +29,7 @@ struct serial_args {
     char *serialDevice;
     char *buff;
     int *serialCursor;
-};
-
-struct isr_args {
-    int *mom; 
-};    
-
-// Update arguments for gpioSetISRFuncEx
-void isr(int gpio, int level, uint32_t tick) {
-     //initialize isr to execute another function
-     //read state of MOM button and write to data buffer
-    struct isr_args *args = m_args;
-    args->mom = gpioRead(gpio);
-}
+};   
 
 int init(char * filename) {
     FILE *fp;
@@ -104,10 +94,6 @@ int init(char * filename) {
         gpioSetPullUpDown(10, PI_PUD_UP);
         gpioSetPullUpDown(25, PI_PUD_UP);
 
-        // TODO Update arguments and functinos for gpioSetISRFuncEx
-        gpioSetISRFuncEx(14, RISING_EDGE, 1, isr, (void *)&m_args);
-        gpioSetISRFuncEx(3, RISING_EDGE, 1, isr, (void *)&m_args);
-
         return 1;
 }
 
@@ -126,6 +112,8 @@ void *csvWriter(void *arguments){
     int SDCircuit[1000];    // Shut Down Circuit Array
     int Trigger[1000];      // 5V Trigger Array
     char bufCanBus[1000];   // Canbus Array
+    int MOM1[1000];         // MOM1 Array
+    int MOM2[1000];         // MOM2 Array
 
     // Wait 10ms before starting main loop
     gpioSleep(PI_TIME_RELATIVE, 0, 10000);
@@ -146,6 +134,8 @@ void *csvWriter(void *arguments){
             IMD[i] = (args -> b)[i];
             SDCircuit[i] = (args -> c)[i];
             Trigger[i] = (args -> d)[i];
+            MOM1[i] = (args -> f)[i];
+            MOM2[i] = (args -> g)[i];
         }
 
         // reset arrays and pointer
@@ -153,6 +143,8 @@ void *csvWriter(void *arguments){
         memset((args -> b), 0, sizeof(&(args -> b)));
         memset((args -> c), 0, sizeof(&(args -> c)));
         memset((args -> d), 0, sizeof(&(args -> d)));
+        memset((args -> f), 0, sizeof(&(args -> f)));
+        memset((args -> g), 0, sizeof(&(args -> g)));
         *(args -> ioCursor) = 0;
         sem_post(&buffMutex);
         // printf("Exited buff csvWriter critical section\n");
@@ -187,7 +179,9 @@ void *csvWriter(void *arguments){
             fprintf(csv_fp, "\n%d,", BSPD[i]);      // BSPD
             fprintf(csv_fp, "%d,", IMD[i]);         // IMD
             fprintf(csv_fp, "%d,", SDCircuit[i]);   // Shut Down Circuit
-            fprintf(csv_fp, "%d", Trigger[i]);      // 5V Trigger
+            fprintf(csv_fp, "%d,", Trigger[i]);      // 5V Trigger
+            fprintf(csv_fp, "%d,", MOM1[i]);      // 5V Trigger
+            fprintf(csv_fp, "%d", MOM2[i]);      // 5V Trigger
         }
         t = clock() - t;
         dt = ((double)t)/CLOCKS_PER_SEC;
@@ -241,7 +235,8 @@ int main() {
     char txtFile[100] = "log.txt";
     char serialDevice[100] = "/dev/ttyAMA0"; // PL011 Serial Port
     char bufCanBus[1000];
-    int MOM[1000];
+    int MOM1[1000];
+    int MOM2[1000];
 
     struct writer_args w_args;
     w_args.csvFile = csvFile;
@@ -251,6 +246,8 @@ int main() {
     w_args.c = SDCircuit;
     w_args.d = Trigger;
     w_args.e = bufCanBus;
+    w_args.f = MOM1;
+    w_args.g = MOM2;
     w_args.ioCursor = &ioPointer;
     w_args.serialCursor = &serialPointer;
 
@@ -258,9 +255,6 @@ int main() {
     s_args.serialDevice = serialDevice;
     s_args.buff = bufCanBus;
     s_args.serialCursor = &serialPointer;
-    
-    struct isr_args m_args;
-    m_args.mom = MOM;
     
     init(csvFile);
     pthread_create(&t_writer, NULL, &csvWriter, (void *)&w_args);
@@ -276,6 +270,8 @@ int main() {
         IMD[ioPointer] = gpioRead(15);
         SDCircuit[ioPointer] = gpioRead(18);
         Trigger[ioPointer] = gpioRead(4);
+        MOM1[ioPointer] = gpioRead(3);
+        MOM2[ioPointer] = gpioRead(14);
         ioPointer++;
         sem_post(&buffMutex);
         // printf("Exited main critical section\n");
