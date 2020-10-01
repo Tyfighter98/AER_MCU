@@ -71,7 +71,7 @@ int init(char * filename) {
         gpioSetMode(31, PI_INPUT);      // IMD Signal (Pin IO15)
         gpioSetMode(33, PI_INPUT);      // Shut down circuit signal (Pin IO18)
         gpioSetMode(3, PI_INPUT);       // BSPD signal (Pin IO2)
-        gpioSetMode(35, PI_INPUT);      // 5V Momentary ON Button1 (Pin IO14)
+        gpioSetMode(11, PI_INPUT);      // 5V Momentary ON Button1 (Pin IO14)
         gpioSetMode(5, PI_INPUT);       // 5V Momnetary ON Button2 (Pin IO3)
         
         // CAN Bus Controller Communication with Pi Zero W via serial communication
@@ -85,7 +85,7 @@ int init(char * filename) {
         gpioSetPullUpDown(31, PI_PUD_UP);       // IMD Signal
         gpioSetPullUpDown(33, PI_PUD_UP);       // Shut down circuit signal
         gpioSetPullUpDown(3, PI_PUD_UP);        // BSPD signal
-        gpioSetPullUpDown(35, PI_PUD_UP);       // 5V Momentary ON Button1
+        gpioSetPullUpDown(11, PI_PUD_UP);       // 5V Momentary ON Button1
         gpioSetPullUpDown(5, PI_PUD_UP);        // 5V Momentary ON Button2
     
         // CAN Bus Controller Commmunication Assigned Pull Ups
@@ -270,7 +270,7 @@ int main() {
         IMD[ioPointer] = gpioRead(31);
         SDCircuit[ioPointer] = gpioRead(33);
         Trigger[ioPointer] = gpioRead(7);
-        MOM1[ioPointer] = gpioRead(35);
+        MOM1[ioPointer] = gpioRead(11);
         MOM2[ioPointer] = gpioRead(5);
         ioPointer++;
         sem_post(&buffMutex);
