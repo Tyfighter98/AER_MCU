@@ -29,11 +29,16 @@ struct serial_args {
     int *serialCursor;
 };
 
-// TODO Update arguments for gpioSetISRFuncEx
+struct isr_args {
+    int *mom; 
+};    
+
+// Update arguments for gpioSetISRFuncEx
 void isr(int gpio, int level, uint32_t tick) {
      //initialize isr to execute another function
      //read state of MOM button and write to data buffer
-    //bufMOM = gpioRead(gpio);
+    struct isr_args *args = m_args;
+    args->mom = gpioRead(gpio);
 }
 
 int init(char * filename) {
@@ -100,8 +105,8 @@ int init(char * filename) {
         gpioSetPullUpDown(25, PI_PUD_UP);
 
         // TODO Update arguments and functinos for gpioSetISRFuncEx
-        gpioSetISRFunc(14, RISING_EDGE, 1, isr);
-        gpioSetISRFunc(3, RISING_EDGE, 1, isr);
+        gpioSetISRFuncEx(14, RISING_EDGE, 1, isr, (void *)&m_args);
+        gpioSetISRFuncEx(3, RISING_EDGE, 1, isr, (void *)&m_args);
 
         return 1;
 }
@@ -236,6 +241,7 @@ int main() {
     char txtFile[100] = "log.txt";
     char serialDevice[100] = "/dev/ttyAMA0"; // PL011 Serial Port
     char bufCanBus[1000];
+    int MOM[1000];
 
     struct writer_args w_args;
     w_args.csvFile = csvFile;
@@ -252,6 +258,9 @@ int main() {
     s_args.serialDevice = serialDevice;
     s_args.buff = bufCanBus;
     s_args.serialCursor = &serialPointer;
+    
+    struct isr_args m_args;
+    m_args.mom = MOM;
     
     init(csvFile);
     pthread_create(&t_writer, NULL, &csvWriter, (void *)&w_args);
