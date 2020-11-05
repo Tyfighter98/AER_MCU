@@ -15,18 +15,24 @@ int main() {
         printf("GPIO initialization succeeded\n");
     }
 
-    gpioSetMode(17, PI_OUTPUT);
-    gpioSetMode(27, PI_INPUT);
-    gpioSetPullUpDown(17, PI_PUD_DOWN);
-    gpioSetPullUpDown(27, PI_PUD_UP); 
-    gpioWrite(17, 1);
-    sleep(2);
-    gpioWrite(17, 0);
+    gpioSetMode(7, PI_INPUT);
+    gpioSetMode(31, PI_INPUT);
+    gpioSetMode(33, PI_INPUT);
+    gpioSetMode(3, PI_INPUT);
+    gpioSetMode(35, PI_INPUT);
+    gpioSetMode(5, PI_INPUT);
 
-    while (1) {
-        printf("GPIO27 is level %d\n", gpioRead(27));
+    gpioSetPullUpDown(7, PI_PUD_UP);
+    gpioSetPullUpDown(31, PI_PUD_UP);
+    gpioSetPullUpDown(33, PI_PUD_UP);
+    gpioSetPullUpDown(3, PI_PUD_UP);
+    gpioSetPullUpDown(35, PI_PUD_UP);
+    gpioSetPullUpDown(5, PI_PUD_UP);
+
+    //while (1) {
+        printf("%d %d %d %d %d %d\n", gpioRead(7), gpioRead(31), gpioRead(33), gpioRead(3), gpioRead(35), gpioRead(5));
         sleep(1);
-    }
+    //}
 
     return 0;
 
