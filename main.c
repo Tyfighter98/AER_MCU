@@ -70,9 +70,9 @@ int init(char * filename) {
         gpioSetMode(4, PI_INPUT);       // 5V Trigger Signal (Pin IO4)
         gpioSetMode(6, PI_INPUT);      // IMD Signal (Pin IO15)
         gpioSetMode(13, PI_INPUT);      // Shut down circuit signal (Pin IO18)
-        gpioSetMode(2, PI_INPUT);       // BSPD signal (Pin IO2)
+        gpioSetMode(17, PI_INPUT);       // BSPD signal (Pin IO2)
         gpioSetMode(19, PI_INPUT);      // 5V Momentary ON Button1 (Pin IO14)
-        gpioSetMode(3, PI_INPUT);       // 5V Momnetary ON Button2 (Pin IO3)
+        gpioSetMode(27, PI_INPUT);       // 5V Momnetary ON Button2 (Pin IO3)
         
         // CAN Bus Controller Communication with Pi Zero W via serial communication
         gpioSetMode(8, PI_INPUT);   //(Pin IO8)
@@ -81,12 +81,12 @@ int init(char * filename) {
         gpioSetMode(25, PI_INPUT);  //(Pin IO25)
 
         // Assign Pull Ups
-        gpioSetPullUpDown(4, PI_PUD_UP);        // 5V Trigger Signal
-        gpioSetPullUpDown(6, PI_PUD_UP);       // IMD Signal
-        gpioSetPullUpDown(13, PI_PUD_UP);       // Shut down circuit signal
-        gpioSetPullUpDown(2, PI_PUD_UP);        // BSPD signal
-        gpioSetPullUpDown(19, PI_PUD_UP);       // 5V Momentary ON Button1
-        gpioSetPullUpDown(3, PI_PUD_UP);        // 5V Momentary ON Button2
+        gpioSetPullUpDown(4, PI_PUD_DOWN);        // 5V Trigger Signal
+        gpioSetPullUpDown(6, PI_PUD_DOWN);       // IMD Signal
+        gpioSetPullUpDown(13, PI_PUD_DOWN);       // Shut down circuit signal
+        gpioSetPullUpDown(17, PI_PUD_DOWN);        // BSPD signal
+        gpioSetPullUpDown(19, PI_PUD_DOWN);       // 5V Momentary ON Button1
+        gpioSetPullUpDown(27, PI_PUD_DOWN);        // 5V Momentary ON Button2
     
         // CAN Bus Controller Commmunication Assigned Pull Ups
         gpioSetPullUpDown(8, PI_PUD_UP);
@@ -266,12 +266,12 @@ int main() {
         // reading each signal inputs sequentially (BSPD, IMD, Shut Down Circuit, 5v Trigger)
         sem_wait(&buffMutex);
         // printf("Entering main critical section\n");
-        BSPD[ioPointer] = gpioRead(2);
+        BSPD[ioPointer] = gpioRead(17);
         IMD[ioPointer] = gpioRead(6);
         SDCircuit[ioPointer] = gpioRead(13);
         Trigger[ioPointer] = gpioRead(4);
         MOM1[ioPointer] = gpioRead(19);
-        MOM2[ioPointer] = gpioRead(3);
+        MOM2[ioPointer] = gpioRead(27);
         ioPointer++;
         sem_post(&buffMutex);
         // printf("Exited main critical section\n");
