@@ -8,7 +8,6 @@ window.onload = function () {
     var mom1 = [];
     var mom2 = [];
 
-    cnt = 0;
     var chart = new CanvasJS.Chart("chartContainer", {
         title :{
             text: "MCU Data"
@@ -98,31 +97,30 @@ window.onload = function () {
                 while (i < len) {
                     if (response[i].length == 7) {
                         trigger.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][1])
                         });
                         imd.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][2])
                         })
                         sdc.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][3])
                         })
                         bspd.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][4])
                         })
                         mom1.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][5])
                         })
                         mom2.push({
-                            x: cnt,
+                            x: parseFloat(response[i][0]),
                             y: parseInt(response[i][6])
                         })
                         i += 1;
-                        cnt += 1;
                     }
                     else {
                         break;
