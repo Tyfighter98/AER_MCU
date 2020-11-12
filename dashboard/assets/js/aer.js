@@ -16,8 +16,6 @@ window.onload = function () {
         legend: {
             cursor: "pointer",
             itemclick: function (e) {
-                //console.log("legend click: " + e.dataPointIndex);
-                //console.log(e);
                 if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
                     e.dataSeries.visible = false;
                 } else {
@@ -89,8 +87,6 @@ window.onload = function () {
             type: 'POST',
             dataType: 'json',
             success: function(response) { 
-                console.log(response[1][0]);
-
                 var i = dataSize;
                 var len = response.length;
 

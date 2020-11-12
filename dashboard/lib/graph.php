@@ -1,5 +1,5 @@
 <?php
-    $file="../log.csv";
+    $file="/home/pi/AER_MCU/log.csv";
     $csv= file_get_contents($file);
     $array = array_map("str_getcsv", explode("\n", $csv));
     array_shift($array);

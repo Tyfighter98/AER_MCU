@@ -14,6 +14,7 @@ sem_t serialMutex;
 struct writer_args {
     char *csvFile;
     char *txtFile;
+    double *t;
     int *a;
     int *b;
     int *c;
@@ -45,7 +46,7 @@ int init(char * filename) {
 
     // Add CSV header if a new file was created
     if (!fileExists) {
-        fprintf(fp, "BSPD, IMD, Shut Down Circuit, 5V Trigger");
+        fprintf(fp, "Time, BSPD, IMD, Shut Down Circuit, 5V Trigger");
     }
 
     fclose(fp);
@@ -100,13 +101,12 @@ int init(char * filename) {
 void *csvWriter(void *arguments){
     struct writer_args *args = arguments;
 
-    clock_t t;
-    double dt;
     FILE *csv_fp;
     FILE *txt_fp;
 
     int ioPointer;
     int serialPointer;
+    double TIME[1000];
     int BSPD[1000];         // BSPD Array
     int IMD[1000];          // IMD Array
     int SDCircuit[1000];    // Shut Down Circuit Array
@@ -121,7 +121,6 @@ void *csvWriter(void *arguments){
     while(1) {
         csv_fp = fopen((args -> csvFile), "a+");
         txt_fp = fopen((args -> txtFile), "a+");
-        t = clock();
         
         // Enter buff critial section
         sem_wait(&buffMutex);
@@ -130,6 +129,7 @@ void *csvWriter(void *arguments){
         ioPointer = *(args -> ioCursor);
         for(int i = 0; i < ioPointer; i++)
         {
+	    TIME[i] = (args -> t)[i];
             BSPD[i] = (args -> a)[i];
             IMD[i] = (args -> b)[i];
             SDCircuit[i] = (args -> c)[i];
@@ -139,6 +139,7 @@ void *csvWriter(void *arguments){
         }
 
         // reset arrays and pointer
+        memset((args -> t), 0, sizeof(&(args -> t)));
         memset((args -> a), 0, sizeof(&(args -> a)));
         memset((args -> b), 0, sizeof(&(args -> b)));
         memset((args -> c), 0, sizeof(&(args -> c)));
@@ -167,25 +168,18 @@ void *csvWriter(void *arguments){
         // printf("Exited serial csvWriter critical section\n");
         // Exit serial critial section
 
-        // Measure time lost where data was not able to be read
-        t = clock() - t;
-        dt = ((double)t)/CLOCKS_PER_SEC;
-        printf("The program took %f seconds to copy the buffers\n", dt);
-
-        t = clock();
         // Write data in local array to file
         for(int i = 0; i < ioPointer; i++)
         {
-            fprintf(csv_fp, "\n%d,", BSPD[i]);      // BSPD
+	    fprintf(csv_fp, "\n%f,", TIME[i]);
+            fprintf(csv_fp, "%d,", Trigger[i]);      // 5V Trigger
             fprintf(csv_fp, "%d,", IMD[i]);         // IMD
             fprintf(csv_fp, "%d,", SDCircuit[i]);   // Shut Down Circuit
-            fprintf(csv_fp, "%d,", Trigger[i]);      // 5V Trigger
+            fprintf(csv_fp, "%d,", BSPD[i]);      // BSPD
             fprintf(csv_fp, "%d,", MOM1[i]);      // 5V Trigger
             fprintf(csv_fp, "%d", MOM2[i]);      // 5V Trigger
+
         }
-        t = clock() - t;
-        dt = ((double)t)/CLOCKS_PER_SEC;
-        printf("The program took %f seconds to write buffers to file\n", dt);
 
         // Write data in local array to file
         fputs(bufCanBus, txt_fp);
@@ -224,7 +218,8 @@ int main() {
 
     pthread_t t_writer;
     pthread_t t_serial;
-    
+   
+    double TIME[1000]; 
     int BSPD[1000];         // BSPD Array
     int IMD[1000];          // IMD Array
     int SDCircuit[1000];    // Shut Down Circuit Array
@@ -237,10 +232,13 @@ int main() {
     char bufCanBus[1000];
     int MOM1[1000];
     int MOM2[1000];
+    clock_t t;
+    double dt;
 
     struct writer_args w_args;
     w_args.csvFile = csvFile;
     w_args.txtFile = txtFile;
+    w_args.t = TIME;
     w_args.a = BSPD;
     w_args.b = IMD;
     w_args.c = SDCircuit;
@@ -260,12 +258,16 @@ int main() {
     pthread_create(&t_writer, NULL, &csvWriter, (void *)&w_args);
     // pthread_create(&t_serial, NULL, &readSerialCanbus, (void *)&s_args);
 
+    t = clock();
+
     while(1)
     {
         // Enter critical section
         // reading each signal inputs sequentially (BSPD, IMD, Shut Down Circuit, 5v Trigger)
         sem_wait(&buffMutex);
         // printf("Entering main critical section\n");
+	dt = clock() - t;
+	TIME[ioPointer] = ((double)dt)/CLOCKS_PER_SEC;
         BSPD[ioPointer] = gpioRead(17);
         IMD[ioPointer] = gpioRead(6);
         SDCircuit[ioPointer] = gpioRead(13);
@@ -281,8 +283,4 @@ int main() {
         gpioSleep(PI_TIME_RELATIVE, 0, 500);
         
     }
-
-    sem_destroy(&buffMutex); 
-
-    return 0;
 }
