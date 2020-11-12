@@ -8,6 +8,10 @@
 		<script src="assets/js/aer.js"></script>
 	</head>
 	<body>
+	<?php
+		session_start();
+		$_SESSION["linecount"] = 0;
+	?>
 		<div id="chartContainer" style="height: 370px; width:100%;"></div>
 		<table class="table" id="table">
 			<thead>

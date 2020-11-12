@@ -1,5 +1,3 @@
-var dataSize = 0;
-
 window.onload = function () {
     var trigger = [];
     var imd = [];
@@ -75,8 +73,6 @@ window.onload = function () {
         ]
     });
     
-    var xVal = 0;
-    var yVal = 100; 
     var updateInterval = 1000;
     var dataLength = 20; // number of dataPoints visible at any point
 
@@ -87,13 +83,12 @@ window.onload = function () {
             type: 'POST',
             dataType: 'json',
             success: function(response) { 
-                var i = dataSize;
+                var i = 0;
                 var len = response.length;
 
-                if (len <= dataSize) {
+                if (len <= 0) {
                     return;
                 }
-
 
                 while (i < len) {
                     if (response[i].length == 7) {
@@ -141,7 +136,7 @@ window.onload = function () {
 
                 chart.render();
 
-                i = dataSize;
+                i = 0;
                 len = response.length;
                 var table = document.getElementById("tableBody");
 
@@ -155,8 +150,6 @@ window.onload = function () {
                     }
                     
                 }
-
-                dataSize = len;
             }
         });
     
