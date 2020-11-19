@@ -12,6 +12,7 @@
 sem_t buffMutex;
 sem_t serialMutex;
 struct timespec t, dt;
+struct timespec sim_t, sim_dt;
 
 struct writer_args {
     char *csvFile;
@@ -219,18 +220,18 @@ void *readSerialCanbus(void *arguments) {
     return 0;
 }
 
-void readSignals(struct writer_args signals) {
+void readSignals(struct writer_args *signals) {
+    clock_gettime(CLOCK_REALTIME, &sim_dt);
     sem_wait(&buffMutex);
     // printf("Entering main critical section\n");
-    dt = clock() - t;
-    TIME[ioPointer] = ((double)dt)/CLOCKS_PER_SEC;
-    BSPD[ioPointer] = gpioRead(17);
-    IMD[ioPointer] = gpioRead(6);
-    SDCircuit[ioPointer] = gpioRead(13);
-    Trigger[ioPointer] = gpioRead(4);
-    MOM1[ioPointer] = gpioRead(19);
-    MOM2[ioPointer] = gpioRead(27);
-    ioPointer++;
+    (signals -> t)[*(signals -> ioCursor)] = (sim_dt.tv_nsec - sim_t.tv_nsec) / 1000;
+    (signals -> a)[*(signals -> ioCursor)] = gpioRead(17);
+    (signals -> b)[*(signals -> ioCursor)] = gpioRead(6);
+    (signals -> c)[*(signals -> ioCursor)] = gpioRead(13);
+    (signals -> d)[*(signals -> ioCursor)] = gpioRead(4);
+    (signals -> f)[*(signals -> ioCursor)] = gpioRead(19);
+    (signals -> g)[*(signals -> ioCursor)] = gpioRead(27);
+    *(signals -> ioCursor) = *(signals -> ioCursor) + 1;
     sem_post(&buffMutex);
 }
 
@@ -238,14 +239,15 @@ void sig_handler(int signum){
     ualarm(500,500);
     clock_gettime(CLOCK_REALTIME, &dt);
     printf("0.%06ld\n", (dt.tv_nsec - t.tv_nsec) / 1000);
-    readSignals(w_args);
+    readSignals(&w_args);
 }
 
 int main() {
 
     pthread_t t_writer;
     pthread_t t_serial;
-   
+ 
+    int i;  
     double TIME[1000]; 
     int BSPD[1000];         // BSPD Array
     int IMD[1000];          // IMD Array
@@ -259,8 +261,6 @@ int main() {
     char bufCanBus[1000];
     int MOM1[1000];
     int MOM2[1000];
-    clock_t t;
-    double dt;
 
     w_args.csvFile = csvFile;
     w_args.txtFile = txtFile;
@@ -285,10 +285,11 @@ int main() {
     pthread_create(&t_writer, NULL, &csvWriter, (void *)&w_args);
     // pthread_create(&t_serial, NULL, &readSerialCanbus, (void *)&s_args);
 
-    t = clock();
+    clock_gettime(CLOCK_REALTIME, &t);
+    clock_gettime(CLOCK_REALTIME, &sim_t);
     ualarm(500,500);
     pause();
-    for(int i=1;i < 10000;i++){
+    for(i=1;i < 10000;i++){
         clock_gettime(CLOCK_REALTIME, &t);
         // printf("%d ",i);
         pause(); //wait for signal
