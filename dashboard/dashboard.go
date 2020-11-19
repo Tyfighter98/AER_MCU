@@ -14,6 +14,8 @@ import (
 )
 
 const numLines = 20
+
+// Use "sed -n 23p test.csv | wc -c" to find the length of a given line in bytes
 const lineSize = 16
 
 type Welcome struct {
@@ -165,6 +167,7 @@ func readLog() LogData {
 
 	buf := make([]byte, (numLines * lineSize))
 	stat, err := os.Stat("test.csv")
+
 	start := stat.Size() - (numLines * lineSize)
 	_, err = file.ReadAt(buf, start)
 	rawData := string(buf)
