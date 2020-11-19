@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="3; URL=/index.html">
+    <script src="static/jquery/jquery.min.js"></script>
+    <link rel="stylesheet" href="static/stylesheets/style.css">
+    <link rel="stylesheet" href="static/bootstrap/css/bootstrap.min.css">
+    <script src='static/bootstrap/js/bootstrap.min.js'></script>
+    <title>Document</title>
+</head>
+<body>
+    <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">5V Trigger</th>
+            <th scope="col">IMD</th>
+            <th scope="col">Shut Down Circuit</th>
+            <th scope="col">BSPD</th>
+            <th scope="col">MOM1</th>
+            <th scope="col">MOM2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{index .Time 0}}</td>
+            <td>{{index .Trigger 0}}</td>
+            <td>{{index .Imd 0}}</td>
+            <td>{{index .Sdc 0}}</td>
+            <td>{{index .Bspd 0}}</td>
+            <td>{{index .Mom1 0}}</td>
+            <td>{{index .Mom2 0}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 1}}</td>
+            <td>{{index .Trigger 1}}</td>
+            <td>{{index .Imd 1}}</td>
+            <td>{{index .Sdc 1}}</td>
+            <td>{{index .Bspd 1}}</td>
+            <td>{{index .Mom1 1}}</td>
+            <td>{{index .Mom2 1}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 2}}</td>
+            <td>{{index .Trigger 2}}</td>
+            <td>{{index .Imd 2}}</td>
+            <td>{{index .Sdc 2}}</td>
+            <td>{{index .Bspd 2}}</td>
+            <td>{{index .Mom1 2}}</td>
+            <td>{{index .Mom2 2}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 3}}</td>
+            <td>{{index .Trigger 3}}</td>
+            <td>{{index .Imd 3}}</td>
+            <td>{{index .Sdc 3}}</td>
+            <td>{{index .Bspd 3}}</td>
+            <td>{{index .Mom1 3}}</td>
+            <td>{{index .Mom2 3}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 4}}</td>
+            <td>{{index .Trigger 4}}</td>
+            <td>{{index .Imd 4}}</td>
+            <td>{{index .Sdc 4}}</td>
+            <td>{{index .Bspd 4}}</td>
+            <td>{{index .Mom1 4}}</td>
+            <td>{{index .Mom2 4}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 5}}</td>
+            <td>{{index .Trigger 5}}</td>
+            <td>{{index .Imd 5}}</td>
+            <td>{{index .Sdc 5}}</td>
+            <td>{{index .Bspd 5}}</td>
+            <td>{{index .Mom1 5}}</td>
+            <td>{{index .Mom2 5}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 6}}</td>
+            <td>{{index .Trigger 6}}</td>
+            <td>{{index .Imd 6}}</td>
+            <td>{{index .Sdc 6}}</td>
+            <td>{{index .Bspd 6}}</td>
+            <td>{{index .Mom1 6}}</td>
+            <td>{{index .Mom2 6}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 7}}</td>
+            <td>{{index .Trigger 7}}</td>
+            <td>{{index .Imd 7}}</td>
+            <td>{{index .Sdc 7}}</td>
+            <td>{{index .Bspd 7}}</td>
+            <td>{{index .Mom1 7}}</td>
+            <td>{{index .Mom2 7}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 8}}</td>
+            <td>{{index .Trigger 8}}</td>
+            <td>{{index .Imd 8}}</td>
+            <td>{{index .Sdc 8}}</td>
+            <td>{{index .Bspd 8}}</td>
+            <td>{{index .Mom1 8}}</td>
+            <td>{{index .Mom2 8}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 9}}</td>
+            <td>{{index .Trigger 9}}</td>
+            <td>{{index .Imd 9}}</td>
+            <td>{{index .Sdc 9}}</td>
+            <td>{{index .Bspd 9}}</td>
+            <td>{{index .Mom1 9}}</td>
+            <td>{{index .Mom2 9}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 10}}</td>
+            <td>{{index .Trigger 10}}</td>
+            <td>{{index .Imd 10}}</td>
+            <td>{{index .Sdc 10}}</td>
+            <td>{{index .Bspd 10}}</td>
+            <td>{{index .Mom1 10}}</td>
+            <td>{{index .Mom2 10}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 11}}</td>
+            <td>{{index .Trigger 11}}</td>
+            <td>{{index .Imd 11}}</td>
+            <td>{{index .Sdc 11}}</td>
+            <td>{{index .Bspd 11}}</td>
+            <td>{{index .Mom1 11}}</td>
+            <td>{{index .Mom2 11}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 12}}</td>
+            <td>{{index .Trigger 12}}</td>
+            <td>{{index .Imd 12}}</td>
+            <td>{{index .Sdc 12}}</td>
+            <td>{{index .Bspd 12}}</td>
+            <td>{{index .Mom1 12}}</td>
+            <td>{{index .Mom2 12}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 13}}</td>
+            <td>{{index .Trigger 13}}</td>
+            <td>{{index .Imd 13}}</td>
+            <td>{{index .Sdc 13}}</td>
+            <td>{{index .Bspd 13}}</td>
+            <td>{{index .Mom1 13}}</td>
+            <td>{{index .Mom2 13}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 14}}</td>
+            <td>{{index .Trigger 14}}</td>
+            <td>{{index .Imd 14}}</td>
+            <td>{{index .Sdc 14}}</td>
+            <td>{{index .Bspd 14}}</td>
+            <td>{{index .Mom1 14}}</td>
+            <td>{{index .Mom2 14}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 15}}</td>
+            <td>{{index .Trigger 15}}</td>
+            <td>{{index .Imd 15}}</td>
+            <td>{{index .Sdc 15}}</td>
+            <td>{{index .Bspd 15}}</td>
+            <td>{{index .Mom1 15}}</td>
+            <td>{{index .Mom2 15}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 16}}</td>
+            <td>{{index .Trigger 16}}</td>
+            <td>{{index .Imd 16}}</td>
+            <td>{{index .Sdc 16}}</td>
+            <td>{{index .Bspd 16}}</td>
+            <td>{{index .Mom1 16}}</td>
+            <td>{{index .Mom2 16}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 17}}</td>
+            <td>{{index .Trigger 17}}</td>
+            <td>{{index .Imd 17}}</td>
+            <td>{{index .Sdc 17}}</td>
+            <td>{{index .Bspd 17}}</td>
+            <td>{{index .Mom1 17}}</td>
+            <td>{{index .Mom2 17}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 18}}</td>
+            <td>{{index .Trigger 18}}</td>
+            <td>{{index .Imd 18}}</td>
+            <td>{{index .Sdc 18}}</td>
+            <td>{{index .Bspd 18}}</td>
+            <td>{{index .Mom1 18}}</td>
+            <td>{{index .Mom2 18}}</td>
+          </tr>
+          <tr>
+            <td>{{index .Time 19}}</td>
+            <td>{{index .Trigger 19}}</td>
+            <td>{{index .Imd 19}}</td>
+            <td>{{index .Sdc 19}}</td>
+            <td>{{index .Bspd 19}}</td>
+            <td>{{index .Mom1 19}}</td>
+            <td>{{index .Mom2 19}}</td>
+          </tr>
+        </tbody>
+      </table>
+</body>
+</html>
