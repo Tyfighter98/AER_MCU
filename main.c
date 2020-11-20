@@ -236,9 +236,9 @@ void readSignals(struct writer_args *signals) {
 }
 
 void sig_handler(int signum){
-    ualarm(500,500);
+    ualarm(400,400);
     clock_gettime(CLOCK_REALTIME, &dt);
-    printf("0.%06ld\n", (dt.tv_nsec - t.tv_nsec) / 1000);
+    //printf("0.%06ld\n", (dt.tv_nsec - t.tv_nsec) / 1000);
     readSignals(&w_args);
 }
 
@@ -246,9 +246,8 @@ int main() {
 
     pthread_t t_writer;
     pthread_t t_serial;
- 
-    int i;  
-    double TIME[1000]; 
+
+    int TIME[1000]; 
     int BSPD[1000];         // BSPD Array
     int IMD[1000];          // IMD Array
     int SDCircuit[1000];    // Shut Down Circuit Array
@@ -287,9 +286,9 @@ int main() {
 
     clock_gettime(CLOCK_REALTIME, &t);
     clock_gettime(CLOCK_REALTIME, &sim_t);
-    ualarm(500,500);
+    ualarm(400,400);
     pause();
-    for(i=1;i < 10000;i++){
+    while(1){
         clock_gettime(CLOCK_REALTIME, &t);
         // printf("%d ",i);
         pause(); //wait for signal
